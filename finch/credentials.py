@@ -3,7 +3,7 @@ import os
 from typing import List
 
 import keyring
-from PyQt5.QtCore import QAbstractTableModel, Qt, pyqtSignal
+from PyQt5.QtCore import QAbstractTableModel, Qt, pyqtSignal, QItemSelectionModel
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, \
     QTableView, QToolBar, QAction, QBoxLayout, QAbstractItemView, QHeaderView, QItemDelegate, QApplication, QStyle, \
@@ -23,7 +23,7 @@ class CredentialsManager:
                 self.credentials = []
 
     def append_credentials_file(self, cred_info):
-        with open(os.path.join(CONFIG_PATH, "credentials.json"), "w") as credential_file:
+        with open(os.path.join(CONFIG_PATH, "credentials.json"), "w+") as credential_file:
             self.credentials.append(cred_info)
             credential_file.write(json.dumps(self.credentials))
 
@@ -35,7 +35,7 @@ class CredentialsManager:
         return self.credentials
 
     def set_credentials(self, credentials):
-        with open(os.path.join(CONFIG_PATH, "credentials.json"), "w") as credential_file:
+        with open(os.path.join(CONFIG_PATH, "credentials.json"), "w+") as credential_file:
             credential_file.write(json.dumps(credentials))
 
     def list_credentials_names(self):
@@ -263,22 +263,24 @@ class ManageCredentialsWindow(QWidget):
         add_row_action.setIcon(QIcon(resource_path('img/plus.svg')))
         add_row_action.triggered.connect(self.add_row)
 
-        delete_row_action = QAction(self)
-        delete_row_action.setText("&Delete Credential")
-        delete_row_action.setIcon(QIcon(resource_path('img/trash.svg')))
-        delete_row_action.triggered.connect(self.delete_row)
+        self.delete_row_action = QAction(self)
+        self.delete_row_action.setText("&Delete Credential")
+        self.delete_row_action.setIcon(QIcon(resource_path('img/trash.svg')))
+        self.delete_row_action.triggered.connect(self.delete_row)
 
-        save_action = QAction(self)
-        save_action.setText("&Save Credentials")
-        save_action.setIcon(QIcon(resource_path('img/save.svg')))
-        save_action.triggered.connect(self.save_credentials)
+        # save_action = QAction(self)
+        # save_action.setText("&Save Credentials")
+        # save_action.setIcon(QtGui.QIcon.fromTheme("media-floppy-symbolic"))
+        # save_action.triggered.connect(self.save_credentials)
 
         self.credential_toolbar.addAction(add_row_action)
-        self.credential_toolbar.addAction(delete_row_action)
-        self.credential_toolbar.addAction(save_action)
+        # self.credential_toolbar.addAction(save_action)
 
         self.table_data = QTableView()
         self.table_data.setModel(CredentialsModel(self.temp_credentials_data))
+        self.selection = self.table_data.selectionModel()
+        self.selection.selectionChanged.connect(self.handleSelectionChanged)
+        self.table_data.model().layoutChanged.connect(self.handleTableLayoutChanged)
         self.table_data.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table_data.setSelectionMode(QAbstractItemView.SingleSelection)
         header = self.table_data.horizontalHeader()
@@ -308,22 +310,42 @@ class ManageCredentialsWindow(QWidget):
         model.insertRow(model.rowCount())
         model.itemData(model.index(model.rowCount() - 1, 0))
         self.table_data.model().layoutChanged.emit()
+        self.table_data.selectRow(model.rowCount() - 1)
+        self.credential_toolbar.addAction(self.delete_row_action)
 
     def delete_row(self):
         indexes = self.table_data.selectedIndexes()
         row = indexes[0].row()
         self.temp_credentials_data.delete_row(row)
         self.table_data.model().layoutChanged.emit()
+        self.credential_toolbar.removeAction(self.delete_row_action)
 
     def save_credentials(self):
+        if self.table_data.model().rowCount() > 0:
+            self.table_data.model().validateData()
+        self.temp_credentials_data.persist_data()
+        self.table_data.model().layoutChanged.emit()
+
+    def handleSelectionChanged(self, selected, deselected):
+        self.credential_toolbar.addAction(self.delete_row_action)
+
+    def handleTableLayoutChanged(self):
         try:
-            if self.table_data.model().rowCount() > 0:
-                self.table_data.model().validateData()
-            self.temp_credentials_data.persist_data()
-            self.table_data.model().layoutChanged.emit()
+            self.save_credentials()
         except Exception as e:
-            show_error_dialog(str(e))
+            print(e)
+            pass
+        if self.table_data.model().rowCount() == 0:
+            self.credential_toolbar.removeAction(self.delete_row_action)
 
     def closeEvent(self, event):
-        self.window_closed.emit()
-        event.accept()
+        try:
+            self.save_credentials()
+            self.window_closed.emit()
+            event.accept()
+        except ValueError as e:
+            show_error_dialog(f"Validation error: {e}")
+            event.ignore()
+        except Exception as e:
+            show_error_dialog(f"Unknown error: {e}")
+            event.ignore()
