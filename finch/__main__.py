@@ -16,7 +16,7 @@ from slugify import slugify
 
 from finch.about import AboutWindow
 from finch.common import ObjectType, s3_session, apply_theme, center_window, CONFIG_PATH, StringUtils, resource_path
-from finch.credentials import CredentialsManager, CreateCredentialWindow, ManageCredentialsWindow
+from finch.credentials import CredentialsManager, ManageCredentialsWindow
 from finch.download import DownloadProgressDialog
 from finch.error import show_error_dialog
 from finch.filelist import S3FileListFetchThread
@@ -39,17 +39,11 @@ class MainWindow(QMainWindow):
         self.credential_toolbar = self.addToolBar("Credentials")
         self.credential_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
 
-        create_credential_action = QAction(self)
-        create_credential_action.setText("&Create Credential")
-        create_credential_action.setIcon(QIcon(resource_path('img/new-credential.svg')))
-        create_credential_action.triggered.connect(self.show_create_credential_window)
-
         edit_credential_action = QAction(self)
         edit_credential_action.setText("&Manage Credentials")
         edit_credential_action.setIcon(QIcon(resource_path('img/credentials.svg')))
         edit_credential_action.triggered.connect(self.show_manage_credential_window)
 
-        self.credential_toolbar.addAction(create_credential_action)
         self.credential_toolbar.addAction(edit_credential_action)
 
         self.about_toolbar = self.addToolBar("About")
@@ -421,11 +415,6 @@ class MainWindow(QMainWindow):
         if local_path:
             self.download_dialog = DownloadProgressDialog(bucket_name, file_key, local_path)
             self.download_dialog.exec_()
-
-    def show_create_credential_window(self) -> None:
-        """ Open credential creation window """
-        self.create_credential_window = CreateCredentialWindow()
-        self.create_credential_window.show()
 
     def show_manage_credential_window(self) -> None:
         """ Open credential management window """
