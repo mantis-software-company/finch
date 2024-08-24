@@ -266,11 +266,6 @@ class ManageCredentialsWindow(QWidget):
         self.credential_toolbar.addAction(self.delete_row_action)
 
     def handleTableLayoutChanged(self):
-        try:
-            self.save_credentials()
-        except Exception as e:
-            print(e)
-            pass
         if self.table_data.model().rowCount() == 0:
             self.credential_toolbar.removeAction(self.delete_row_action)
 
