@@ -43,3 +43,12 @@ executables = [
 [tool.cxfreeze.build_exe]
 excludes = ["tkinter", "unittest", "pydoc"]
 includes = ['keyring.backends.SecretService', 'keyring.backends.libsecret', 'keyring.backends.chainer', 'keyring.backends.Windows', 'keyring.backends.kwallet', 'keyring.backends.macOS']
+
+[tool.cxfreeze.bdist_mac]
+iconfile = "icon.png"
+bundle_name = "Finch S3 Client"
+
+[tool.cxfreeze.bdist_dmg]
+applications_shortcut = true
+volume_label = "Finch S3 Client"
+background = "builtin-arrow"
