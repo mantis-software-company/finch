@@ -1,0 +1,54 @@
+[project]
+name = "finch"
+version = "1.0.0a1"
+description = "Open source and cross-platform GUI client for Amazon S3 and compatible storage platforms"
+authors = [
+    {name = "Furkan Kalkan", email = "furkankalkan@mantis.com.tr"},
+]
+dependencies = [
+    "PyQt5==5.15.11",
+    "boto3==1.35.5",
+    "keyring==25.3.0",
+    "python-slugify==8.0.4",
+]
+readme = "README.md"
+license = {text = "MIT"}
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft",
+    "Operating System :: POSIX",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Topic :: Internet",
+    "Topic :: Software Development",
+    "Topic :: Utilities",
+]
+
+
+[project.urls]
+Homepage = "https://github.com/mantis-software-company/finch"
+
+[project.scripts]
+finch = "finch.__main__:main"
+
+[tool.cxfreeze]
+executables = [
+    {script = "finch.py", base = "gui"}
+]
+
+
+[tool.cxfreeze.build_exe]
+excludes = ["tkinter", "unittest", "pydoc"]
+includes = ['keyring.backends.SecretService', 'keyring.backends.libsecret', 'keyring.backends.chainer', 'keyring.backends.Windows', 'keyring.backends.kwallet', 'keyring.backends.macOS']
+
+[tool.cxfreeze.bdist_mac]
+iconfile = "icon.png"
+bundle_name = "Finch S3 Client"
+
+[tool.cxfreeze.bdist_dmg]
+applications_shortcut = true
+volume_label = "Finch S3 Client"
+background = "builtin-arrow"
