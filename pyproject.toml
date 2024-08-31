@@ -34,21 +34,50 @@ Homepage = "https://github.com/mantis-software-company/finch"
 [project.scripts]
 finch = "finch.__main__:main"
 
+[tool.setuptools]
+packages = ["finch"]
+
+[tool.setuptools.package-data]
+"finch" = ["img/*.png", "img/*.svg"]
+
+
 [tool.cxfreeze]
 executables = [
-    {script = "finch.py", base = "gui"}
+    {script = "finch.py", base = "gui", target_name="Finch S3 Client", copyright="Copyright (C) 2024 Furkan Kalkan", icon = "icon.ico", shortcut_name="Finch S3 Client", shortcut_dir='StartMenuFolder'}
 ]
 
 
 [tool.cxfreeze.build_exe]
-excludes = ["tkinter", "unittest", "pydoc"]
-includes = ['keyring.backends.SecretService', 'keyring.backends.libsecret', 'keyring.backends.chainer', 'keyring.backends.Windows', 'keyring.backends.kwallet', 'keyring.backends.macOS']
+include_msvcr = true
+excludes = [
+    "tkinter",
+    "unittest",
+    "pydoc",
+    ]
+
+includes = [
+    'keyring.backends.SecretService',
+    'keyring.backends.libsecret',
+    'keyring.backends.chainer',
+    'keyring.backends.Windows',
+    'keyring.backends.kwallet',
+    'keyring.backends.macOS'
+    ]
 
 [tool.cxfreeze.bdist_mac]
 iconfile = "icon.png"
 bundle_name = "Finch S3 Client"
+codesign_identity = "Developer ID Application: Furkan Kalkan (3YR4725H5N)"
+codesign_options = "runtime"
+codesign_deep = true
+codesign_timestamp = true
+codesign_verify = true
+
 
 [tool.cxfreeze.bdist_dmg]
 applications_shortcut = true
 volume_label = "Finch S3 Client"
 background = "builtin-arrow"
+
+[tool.cxfreeze.bdist_msi]
+install_icon = "icon.ico"
