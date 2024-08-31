@@ -1,5 +1,6 @@
 import functools
 import json
+import logging
 import os
 import sys
 from pathlib import Path
@@ -8,10 +9,10 @@ import boto3
 import keyring
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget, QStyle, \
     QAction, QComboBox, QMenu, QInputDialog, \
-    QMessageBox, QFileDialog, QSizePolicy
+    QMessageBox, QFileDialog, QSizePolicy, QMenuBar
 from slugify import slugify
 
 from finch.about import AboutWindow
@@ -35,13 +36,14 @@ class MainWindow(QMainWindow):
         self.file_toolbar = None
         self.about_window = None
         self.upload_dialog = None
-
         self.credential_toolbar = self.addToolBar("Credentials")
         self.credential_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
 
         edit_credential_action = QAction(self)
         edit_credential_action.setText("&Manage Credentials")
-        edit_credential_action.setIcon(QIcon(resource_path('img/credentials.svg')))
+        icon = QIcon()
+        icon.addPixmap(QPixmap(resource_path(os.path.join('img', 'credentials.svg'))))
+        edit_credential_action.setIcon(icon)
         edit_credential_action.triggered.connect(self.show_manage_credential_window)
 
         self.credential_toolbar.addAction(edit_credential_action)
@@ -93,13 +95,9 @@ class MainWindow(QMainWindow):
 
     def show_s3_files(self, cred_index):
         if self.credential_selector.itemData(cred_index) != 0:
-            self.removeToolBar(self.about_toolbar)
-            self.removeToolBar(self.file_toolbar)
-            self.file_toolbar = self.addToolBar("File")
-            cred_name = self.credential_selector.itemText(cred_index)
-            cred = self.credentials_manager.get_credential(cred_name)
-            self.layout.removeWidget(self.tree_widget)
             try:
+                cred_name = self.credential_selector.itemText(cred_index)
+                cred = self.credentials_manager.get_credential(cred_name)
                 s3_session.resource = boto3.resource('s3',
                                                      endpoint_url=cred['endpoint'],
                                                      aws_access_key_id=cred['access_key'],
@@ -109,68 +107,72 @@ class MainWindow(QMainWindow):
                                                      ),
                                                      region_name=cred['region']
                                                      )
+                self.removeToolBar(self.about_toolbar)
+                self.removeToolBar(self.file_toolbar)
+                self.file_toolbar = self.addToolBar("File")
+                self.layout.removeWidget(self.tree_widget)
+                upload_file_action = QAction(self)
+                upload_file_action.setText("&Upload File")
+                upload_file_action.setIcon(QIcon(resource_path('img/upload.svg')))
+                upload_file_action.triggered.connect(self.upload_file)
+
+                create_bucket_action = QAction(self)
+                create_bucket_action.setText("&Create Bucket")
+                create_bucket_action.setIcon(QIcon(resource_path('img/new-folder.svg')))
+                create_bucket_action.triggered.connect(self.create_bucket)
+
+                delete_action = QAction(self)
+                delete_action.setText("&Delete")
+                delete_action.setIcon(QIcon(resource_path('img/trash.svg')))
+                delete_action.triggered.connect(self.global_delete)
+
+                download_action = QAction(self)
+                download_action.setText("&Download")
+                download_action.setIcon(QIcon(resource_path('img/save.svg')))
+                download_action.triggered.connect(self.download_file)
+
+                refresh_action = QAction(self)
+                refresh_action.setText("&Refresh")
+                refresh_action.setIcon(QIcon(resource_path('img/refresh.svg')))
+                refresh_action.triggered.connect(self.refresh_ui)
+
+                self.file_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
+                self.file_toolbar.addAction(upload_file_action)
+                self.file_toolbar.addAction(create_bucket_action)
+                self.file_toolbar.addAction(delete_action)
+                self.file_toolbar.addAction(download_action)
+                self.file_toolbar.addAction(refresh_action)
+
+                self.about_toolbar = self.addToolBar("About")
+                self.about_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
+                empty = QWidget()
+                empty.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+                show_about_action = QAction(self)
+                show_about_action.setText("&About")
+                show_about_action.setIcon(QIcon(resource_path('img/about.svg')))
+                show_about_action.triggered.connect(self.open_about_window)
+                self.about_toolbar.addWidget(empty)
+                self.about_toolbar.addAction(show_about_action)
+
+                self.tree_widget = QTreeWidget()
+                self.tree_widget.setContextMenuPolicy(Qt.CustomContextMenu)
+                self.tree_widget.customContextMenuRequested.connect(self.open_context_menu)
+                self.tree_widget.setSortingEnabled(True)
+                self.tree_widget.sortByColumn(0, Qt.AscendingOrder)
+                header = self.tree_widget.header()
+                header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+                header.setStretchLastSection(False)
+                header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+                self.tree_widget.setColumnCount(4)
+                self.tree_widget.setHeaderLabels(["Name", "Type", "Size", "Date"])
+                self.tree_widget.itemExpanded.connect(self.add_files_to_tree)
+
+                self.layout.addWidget(self.tree_widget)
+
+                self.add_buckets_to_tree()
+
             except Exception as e:
                 show_error_dialog(str(e))
-
-            upload_file_action = QAction(self)
-            upload_file_action.setText("&Upload File")
-            upload_file_action.setIcon(QIcon(resource_path('img/upload.svg')))
-            upload_file_action.triggered.connect(self.upload_file)
-
-            create_bucket_action = QAction(self)
-            create_bucket_action.setText("&Create Bucket")
-            create_bucket_action.setIcon(QIcon(resource_path('img/new-folder.svg')))
-            create_bucket_action.triggered.connect(self.create_bucket)
-
-            delete_action = QAction(self)
-            delete_action.setText("&Delete")
-            delete_action.setIcon(QIcon(resource_path('img/trash.svg')))
-            delete_action.triggered.connect(self.global_delete)
-
-            download_action = QAction(self)
-            download_action.setText("&Download")
-            download_action.setIcon(QIcon(resource_path('img/save.svg')))
-            download_action.triggered.connect(self.download_file)
-
-            refresh_action = QAction(self)
-            refresh_action.setText("&Refresh")
-            refresh_action.setIcon(QIcon(resource_path('img/refresh.svg')))
-            refresh_action.triggered.connect(self.refresh_ui)
-
-            self.file_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
-            self.file_toolbar.addAction(upload_file_action)
-            self.file_toolbar.addAction(create_bucket_action)
-            self.file_toolbar.addAction(delete_action)
-            self.file_toolbar.addAction(download_action)
-            self.file_toolbar.addAction(refresh_action)
-
-            self.about_toolbar = self.addToolBar("About")
-            self.about_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
-            empty = QWidget()
-            empty.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-            show_about_action = QAction(self)
-            show_about_action.setText("&About")
-            show_about_action.setIcon(QIcon(resource_path('img/about.svg')))
-            show_about_action.triggered.connect(self.open_about_window)
-            self.about_toolbar.addWidget(empty)
-            self.about_toolbar.addAction(show_about_action)
-
-            self.tree_widget = QTreeWidget()
-            self.tree_widget.setContextMenuPolicy(Qt.CustomContextMenu)
-            self.tree_widget.customContextMenuRequested.connect(self.open_context_menu)
-            self.tree_widget.setSortingEnabled(True)
-            self.tree_widget.sortByColumn(0, Qt.AscendingOrder)
-            header = self.tree_widget.header()
-            header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
-            header.setStretchLastSection(False)
-            header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
-            self.tree_widget.setColumnCount(4)
-            self.tree_widget.setHeaderLabels(["Name", "Type", "Size", "Date"])
-            self.tree_widget.itemExpanded.connect(self.add_files_to_tree)
-
-            self.layout.addWidget(self.tree_widget)
-
-            self.add_buckets_to_tree()
 
     def get_bucket_name_from_selected_item(self):
         """ Get bucket name data from bucket or file/folder item in treeview """
@@ -209,6 +211,7 @@ class MainWindow(QMainWindow):
                 bucket_item.setText(3, StringUtils.format_datetime(bucket['CreationDate']))
                 bucket_item.setChildIndicatorPolicy(QTreeWidgetItem.ShowIndicator)
         except Exception as e:
+            self.removeToolBar(self.file_toolbar)
             show_error_dialog(str(e))
 
     def add_files_to_tree(self, item):
