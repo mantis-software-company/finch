@@ -242,7 +242,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
+          name: v${{ github.ref_name }}
           generateReleaseNotes: true,
           artifacts: |
             finch-${{ env.VERSION }}-macos-arm64.dmg
