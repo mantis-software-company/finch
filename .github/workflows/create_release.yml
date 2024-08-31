@@ -1,0 +1,251 @@
+name: Build and Release Cross-Platform Artifacts
+
+# This triggers the workflow manually
+on:
+  workflow_dispatch:
+
+env:
+  VERSION: ${{ github.ref_name }}  # Extracts the tag name as the version
+
+jobs:
+  build-macos-arm:
+    runs-on: macos-14
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install cx_freeze
+          pip install .
+          botocore_version=$(python -c "import botocore; print(botocore.__version__)")
+          git clone https://github.com/boto/botocore.git vendor/botocore
+          cd vendor/botocore
+          git checkout $botocore_version
+          cd ../..
+          find vendor/botocore/botocore/data -maxdepth 1 -type d ! -name s3\* ! -path vendor/botocore/botocore/data -exec rm -rf {} \;
+          pip install vendor/botocore
+
+      - name: Import the Apple Developer ID certificate
+        env:
+          APPLE_DEV_ID_CERT: ${{ secrets.APPLE_DEV_ID_CERT }}
+          APPLE_DEV_ID_CERT_PASS: ${{ secrets.APPLE_DEV_ID_CERT_PASS }}
+        run: |
+          echo "$APPLE_DEV_ID_CERT" | base64 --decode > DeveloperID.p12
+          security create-keychain -p "" build.keychain
+          security import DeveloperID.p12 -k build.keychain -P "$APPLE_DEV_ID_CERT_PASS" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+          security unlock-keychain -p "" build.keychain
+          security set-keychain-settings -lut 14400 build.keychain
+          security list-keychains -s build.keychain
+
+      - name: Build DMG
+        run: |
+          cxfreeze bdist_dmg
+          mv "build/Finch S3 Client.dmg" build/finch-${{ env.VERSION }}-macos-arm64.dmg
+
+      - name: Sign the DMG
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          codesign --deep --timestamp --options=runtime -s "Developer ID Application: Furkan Kalkan ($APPLE_TEAM_ID)" -v build/finch-${{ env.VERSION }}-macos-arm64.dmg
+
+      - name: Notarize the DMG
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          xcrun notarytool submit build/finch-${{ env.VERSION }}-macos-arm64.dmg \
+          --apple-id "$APPLE_ID" \
+          --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+          --team-id "$APPLE_TEAM_ID" \
+          --wait
+
+      - name: Staple the notarization ticket
+        run: |
+          xcrun stapler staple build/finch-${{ env.VERSION }}-macos-arm64.dmg
+
+      - name: Verify the staple
+        run: |
+          spctl -a -t open --context context:primary-signature -v build/finch-${{ env.VERSION }}-macos-arm64.dmg
+
+      - name: Clean up the keychain
+        run: |
+          security delete-keychain build.keychain
+
+      - name: Upload DMG Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-arm-artifact
+          path: build/finch-${{ env.VERSION }}-macos-arm64.dmg
+
+  build-macos-intel:
+    runs-on: macos-13
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install cx_freeze
+          pip install .
+          botocore_version=$(python -c "import botocore; print(botocore.__version__)")
+          git clone https://github.com/boto/botocore.git vendor/botocore
+          cd vendor/botocore
+          git checkout $botocore_version
+          cd ../..
+          find vendor/botocore/botocore/data -maxdepth 1 -type d ! -name s3\* ! -path vendor/botocore/botocore/data -exec rm -rf {} \;
+          pip install vendor/botocore
+
+      - name: Import the Apple Developer ID certificate
+        env:
+          APPLE_DEV_ID_CERT: ${{ secrets.APPLE_DEV_ID_CERT }}
+          APPLE_DEV_ID_CERT_PASS: ${{ secrets.APPLE_DEV_ID_CERT_PASS }}
+        run: |
+          echo "$APPLE_DEV_ID_CERT" | base64 --decode > DeveloperID.p12
+          security create-keychain -p "" build.keychain
+          security import DeveloperID.p12 -k build.keychain -P "$APPLE_DEV_ID_CERT_PASS" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+          security unlock-keychain -p "" build.keychain
+          security set-keychain-settings -lut 14400 build.keychain
+          security list-keychains -s build.keychain
+
+      - name: Build DMG
+        run: |
+          cxfreeze bdist_dmg
+          mv "build/Finch S3 Client.dmg" build/finch-${{ env.VERSION }}-macos-x86_64.dmg
+
+      - name: Sign the DMG
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          codesign --deep --timestamp --options=runtime -s "Developer ID Application: Furkan Kalkan ($APPLE_TEAM_ID)" -v build/finch-${{ env.VERSION }}-macos-x86_64.dmg
+
+      - name: Notarize the DMG
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          xcrun notarytool submit build/finch-${{ env.VERSION }}-macos-x86_64.dmg \
+          --apple-id "$APPLE_ID" \
+          --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+          --team-id "$APPLE_TEAM_ID" \
+          --wait
+
+      - name: Staple the notarization ticket
+        run: |
+          xcrun stapler staple build/finch-${{ env.VERSION }}-macos-x86_64.dmg
+
+      - name: Verify the staple
+        run: |
+          spctl -a -t open --context context:primary-signature -v build/finch-${{ env.VERSION }}-macos-x86_64.dmg
+
+      - name: Clean up the keychain
+        run: |
+          security delete-keychain build.keychain
+
+      - name: Upload DMG Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-intel-artifact
+          path: build/finch-${{ env.VERSION }}-macos-x86_64.dmg
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          .\scripts\install_deps.bat
+
+      - name: Build MSI
+        run: |
+          .\scripts\build_msi.bat ${{ env.VERSION }}
+          dir .\dist\*.*
+
+      - name: Upload MSI Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-artifact
+          path: dist/finch-${{ env.VERSION }}-windows-x86_64.msi
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Build DEB
+        run: |
+          bash scripts/build_deb.sh ${{ env.VERSION }}
+
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-artifact
+          path: dist/linux/finch-${{ env.VERSION }}-linux-all.deb
+
+
+
+  release:
+    needs: [build-macos-arm, build-macos-intel, build-windows, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download MacOS Apple Silicon Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: macos-arm-artifact
+
+      - name: Download MacOS Intel Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: macos-intel-artifact
+
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: windows-artifact
+
+      - name: Download Linux Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: linux-artifact
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          generateReleaseNotes: true,
+          artifacts: |
+            finch-${{ env.VERSION }}-macos-arm64.dmg
+            finch-${{ env.VERSION }}-macos-x86_64.dmg
+            finch-${{ env.VERSION }}-windows-x86_64.msi
+            finch-${{ env.VERSION }}-linux-all.deb
