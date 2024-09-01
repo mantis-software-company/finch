@@ -91,6 +91,15 @@ class MainWindow(QMainWindow):
         self.credential_selector.currentIndexChanged.connect(self.show_s3_files)
         self.refresh_ui()
 
+    def handle_selection(self, selected, deselected):
+        if selected.indexes():
+            for action in self.file_toolbar.actions():
+                action.setDisabled(False)
+        if deselected.indexes():
+            for idx, action in enumerate(self.file_toolbar.actions()):
+                if idx in [0, 2, 3]:
+                    action.setDisabled(True)
+
     def show_s3_files(self, cred_index):
         if self.credential_selector.itemData(cred_index) != 0:
             try:
@@ -113,6 +122,7 @@ class MainWindow(QMainWindow):
                 upload_file_action.setText("&Upload File")
                 upload_file_action.setIcon(QIcon(resource_path('img/upload.svg')))
                 upload_file_action.triggered.connect(self.upload_file)
+                upload_file_action.setDisabled(True)
 
                 create_bucket_action = QAction(self)
                 create_bucket_action.setText("&Create Bucket")
@@ -123,11 +133,13 @@ class MainWindow(QMainWindow):
                 delete_action.setText("&Delete")
                 delete_action.setIcon(QIcon(resource_path('img/trash.svg')))
                 delete_action.triggered.connect(self.global_delete)
+                delete_action.setDisabled(True)
 
                 download_action = QAction(self)
                 download_action.setText("&Download")
                 download_action.setIcon(QIcon(resource_path('img/save.svg')))
                 download_action.triggered.connect(self.download_file)
+                download_action.setDisabled(True)
 
                 refresh_action = QAction(self)
                 refresh_action.setText("&Refresh")
@@ -164,6 +176,7 @@ class MainWindow(QMainWindow):
                 self.tree_widget.setColumnCount(4)
                 self.tree_widget.setHeaderLabels(["Name", "Type", "Size", "Date"])
                 self.tree_widget.itemExpanded.connect(self.add_files_to_tree)
+                self.tree_widget.selectionModel().selectionChanged.connect(self.handle_selection)
 
                 self.layout.addWidget(self.tree_widget)
 
