@@ -12,10 +12,10 @@ jobs:
     runs-on: macos-14
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
@@ -81,7 +81,7 @@ jobs:
           security delete-keychain build.keychain
 
       - name: Upload DMG Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: macos-arm-artifact
           path: build/finch-${{ env.VERSION }}-macos-arm64.dmg
@@ -90,10 +90,10 @@ jobs:
     runs-on: macos-13
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
@@ -159,7 +159,7 @@ jobs:
           security delete-keychain build.keychain
 
       - name: Upload DMG Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: macos-intel-artifact
           path: build/finch-${{ env.VERSION }}-macos-x86_64.dmg
@@ -168,10 +168,10 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
@@ -185,7 +185,7 @@ jobs:
           dir .\dist\*.*
 
       - name: Upload MSI Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: windows-artifact
           path: dist/finch-${{ env.VERSION }}-windows-x86_64.msi
@@ -194,10 +194,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: checkout@v4
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
@@ -206,7 +206,7 @@ jobs:
           bash scripts/build_deb.sh ${{ env.VERSION }}
 
       - name: Upload Linux Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: linux-artifact
           path: dist/linux/finch-${{ env.VERSION }}-linux-all.deb
@@ -218,22 +218,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download MacOS Apple Silicon Artifact
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
         with:
           name: macos-arm-artifact
 
       - name: Download MacOS Intel Artifact
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
         with:
           name: macos-intel-artifact
 
       - name: Download Windows Artifact
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
         with:
           name: windows-artifact
 
       - name: Download Linux Artifact
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
         with:
           name: linux-artifact
 
