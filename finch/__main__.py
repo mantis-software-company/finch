@@ -124,10 +124,10 @@ class MainWindow(QMainWindow):
                 upload_file_action.triggered.connect(self.upload_file)
                 upload_file_action.setDisabled(True)
 
-                create_bucket_action = QAction(self)
-                create_bucket_action.setText("&Create Bucket")
-                create_bucket_action.setIcon(QIcon(resource_path('img/new-folder.svg')))
-                create_bucket_action.triggered.connect(self.create_bucket)
+                create_action = QAction(self)
+                create_action.setText("&Create")
+                create_action.setIcon(QIcon(resource_path('img/new-folder.svg')))
+                create_action.triggered.connect(self.global_create)
 
                 delete_action = QAction(self)
                 delete_action.setText("&Delete")
@@ -148,7 +148,7 @@ class MainWindow(QMainWindow):
 
                 self.file_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
                 self.file_toolbar.addAction(upload_file_action)
-                self.file_toolbar.addAction(create_bucket_action)
+                self.file_toolbar.addAction(create_action)
                 self.file_toolbar.addAction(delete_action)
                 self.file_toolbar.addAction(download_action)
                 self.file_toolbar.addAction(refresh_action)
@@ -392,6 +392,18 @@ class MainWindow(QMainWindow):
         if status == QMessageBox.Yes:
             s3_session.resource.Object(bucket_name, object_key).delete()
             self.refresh_ui()
+
+    def global_create(self) -> None:
+        """ Creates bucket or folder. It triggers after clicking 'Create' button in toolbox. """
+        indexes = self.tree_widget.selectedIndexes()
+        if len(indexes) == 0:
+            self.create_bucket()
+        else:
+            object_type = indexes[1].data()
+            if object_type == ObjectType.BUCKET:
+                self.create_folder()
+            elif object_type == ObjectType.FOLDER:
+                self.create_folder()
 
     def global_delete(self) -> None:
         """ Deletes selected bucket, folder or file recursively. It triggers after clicking 'Delete' button in toolbox. """
