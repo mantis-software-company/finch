@@ -93,12 +93,27 @@ class MainWindow(QMainWindow):
 
     def handle_selection(self, selected, deselected):
         if selected.indexes():
-            for action in self.file_toolbar.actions():
-                action.setDisabled(False)
-        if deselected.indexes():
+            selected_indexes = selected.indexes()
+            object_type = selected_indexes[1].data()
             for idx, action in enumerate(self.file_toolbar.actions()):
-                if idx in [0, 2, 3]:
-                    action.setDisabled(True)
+                if object_type == ObjectType.FILE:
+                    if idx in [2, 3, 4]:
+                        action.setDisabled(False)
+                    else:
+                        action.setDisabled(True)
+                else:
+                    if idx in [0, 1, 2, 4]:
+                        action.setDisabled(False)
+                    else:
+                        action.setDisabled(True)
+        if deselected.indexes():
+            selected_indexes = self.tree_widget.selectedIndexes()
+            if not selected_indexes:
+                for idx, action in enumerate(self.file_toolbar.actions()):
+                    if idx in [0, 2, 3]:
+                        action.setDisabled(True)
+                    else:
+                        action.setDisabled(False)
 
     def show_s3_files(self, cred_index):
         if self.credential_selector.itemData(cred_index) != 0:
@@ -119,7 +134,7 @@ class MainWindow(QMainWindow):
                 self.file_toolbar = self.addToolBar("File")
                 self.layout.removeWidget(self.tree_widget)
                 upload_file_action = QAction(self)
-                upload_file_action.setText("&Upload File")
+                upload_file_action.setText("&Upload")
                 upload_file_action.setIcon(QIcon(resource_path('img/upload.svg')))
                 upload_file_action.triggered.connect(self.upload_file)
                 upload_file_action.setDisabled(True)
