@@ -21,6 +21,7 @@ from finch.download import DownloadProgressDialog
 from finch.error import show_error_dialog
 from finch.filelist import S3FileListFetchThread
 from finch.upload import UploadDialog
+from finch.widgets.search import SearchWidget
 
 
 class MainWindow(QMainWindow):
@@ -72,8 +73,11 @@ class MainWindow(QMainWindow):
         self.layout = QVBoxLayout()
         self.layout.setAlignment(Qt.AlignTop)
         self.widget.setLayout(self.layout)
-
+        self.tree_widget_wrapper = QWidget()
+        self.tree_widget_wrapper_lay = QVBoxLayout()
+        self.tree_widget_wrapper.setLayout(self.tree_widget_wrapper_lay)
         self.fill_credentials()
+        self.layout.addWidget(self.tree_widget_wrapper)
         self.setCentralWidget(self.widget)
 
         center_window(self)
@@ -132,7 +136,7 @@ class MainWindow(QMainWindow):
                 self.removeToolBar(self.about_toolbar)
                 self.removeToolBar(self.file_toolbar)
                 self.file_toolbar = self.addToolBar("File")
-                self.layout.removeWidget(self.tree_widget)
+                self.tree_widget_wrapper_lay.removeWidget(self.tree_widget)
                 upload_file_action = QAction(self)
                 upload_file_action.setText("&Upload")
                 upload_file_action.setIcon(QIcon(resource_path('img/upload.svg')))
@@ -161,12 +165,18 @@ class MainWindow(QMainWindow):
                 refresh_action.setIcon(QIcon(resource_path('img/refresh.svg')))
                 refresh_action.triggered.connect(self.refresh_ui)
 
+                search_action = QAction(self)
+                search_action.setText("&Search")
+                search_action.setIcon(QIcon(resource_path('img/search.svg')))
+                search_action.triggered.connect(self.search)
+
                 self.file_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
                 self.file_toolbar.addAction(upload_file_action)
                 self.file_toolbar.addAction(create_action)
                 self.file_toolbar.addAction(delete_action)
                 self.file_toolbar.addAction(download_action)
                 self.file_toolbar.addAction(refresh_action)
+                self.file_toolbar.addAction(search_action)
 
                 self.about_toolbar = self.addToolBar("About")
                 self.about_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
@@ -193,7 +203,7 @@ class MainWindow(QMainWindow):
                 self.tree_widget.itemExpanded.connect(self.add_files_to_tree)
                 self.tree_widget.selectionModel().selectionChanged.connect(self.handle_selection)
 
-                self.layout.addWidget(self.tree_widget)
+                self.tree_widget_wrapper_lay.addWidget(self.tree_widget)
 
                 self.add_buckets_to_tree()
 
@@ -468,6 +478,19 @@ class MainWindow(QMainWindow):
         """ Refreshes the file treeview """
         self.removeToolBar(self.file_toolbar)
         self.show_s3_files(self.credential_selector.currentIndex())
+        self.search_widget = SearchWidget(main_widget=self)
+        if self.layout.itemAt(2):
+            if isinstance(self.layout.itemAt(2).widget(), SearchWidget):
+                for idx, action in enumerate(self.file_toolbar.actions()):
+                    if idx in [5]:
+                        action.setDisabled(True)
+
+    def search(self):
+        self.search_widget = SearchWidget(main_widget=self)
+        for idx, action in enumerate(self.file_toolbar.actions()):
+            if idx in [5]:
+                action.setDisabled(True)
+        self.layout.addWidget(self.search_widget)
 
     def open_about_window(self) -> None:
         """ Open about window """
