@@ -74,7 +74,10 @@ class StringUtils:
 
     def format_datetime(dt: datetime) -> str:
         """ Function for format dates """
-        return dt.strftime(DATETIME_FORMAT)
+        if dt:
+            return dt.strftime(DATETIME_FORMAT)
+        else:
+            return ''
 
     def remove_trailing_zeros(x: str) -> str:
         """ Function for removing trailing zeros from floats """

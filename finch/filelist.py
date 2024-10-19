@@ -1,10 +1,10 @@
 import json
 
-from PyQt5.QtCore import QThread, pyqtSignal, Qt
+from PyQt5.QtCore import QThread, pyqtSignal, Qt, QEventLoop
 from PyQt5.QtWidgets import QTreeWidgetItem
 
-from finch.common import s3_session, ObjectType
 from finch.common import StringUtils
+from finch.common import s3_session, ObjectType
 
 
 class S3FileListFetchThread(QThread):
@@ -50,3 +50,4 @@ class S3FileListFetchThread(QThread):
                     self.file_list_fetched.emit(json.dumps(_obj), self.item)
             else:
                 self.file_list_fetched.emit(json.dumps(_obj), self.item)
+
