@@ -1,6 +1,7 @@
 # Finch S3 Client
 
 Open source and cross-platform GUI client for Amazon S3 and compatible storage platforms.
+
 ![img.png](img.png)
 
 ## Features
@@ -10,25 +11,22 @@ Open source and cross-platform GUI client for Amazon S3 and compatible storage p
 - Browse and manage your S3 buckets and objects in file tree
 - Delete folders and buckets recursively
 - Upload and download files
+- Searching buckets & objects
 - More features, soon
 
 ## Installation
 
-**Warning:** This software is currently in alpha stage, this means you can experience bugs and crashes any time. 
-Don't use alpha, beta and RC (Release Candidate) versions for production environments. 
-This version tested in this platforms:
-- Ubuntu 18.04 on Intel proccessor
-- Mac OS Monterey on M1 processor
-- Mac OS Ventura on M1 processor
+> **Warning:** This software is currently in beta stage, this means you can experience bugs and crashes any time. 
+We don't recommend using this tool for serious production environments at the moment. Use it with at your own risk. 
+We are not responsible for file loss and other problems that may be caused by this tool. 
+
 
 To install Finch S3 Client, follow these steps:
-
-To install S3 Client, follow these steps:
 
 1. Download the latest release for your platform from the releases page. 
 2. Install the downloaded executable according to your platform's instructions.
  
-Alternatively, you can create your own executable with pyinstaller.
+Alternatively, you can create your own executable with cx_Freeze.
 
 ## Contributing
 
