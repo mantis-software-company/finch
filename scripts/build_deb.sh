@@ -7,7 +7,7 @@ mkdir -p dist/linux/deb/usr/share/icons
 mkdir -p dist/linux/deb/usr/lib/python3/dist-packages
 
 cat <<EOF > dist/linux/deb/DEBIAN/control
-Package: finch
+Package: finch-s3-client
 Version: $PKG_VERSION
 Section: base
 Priority: optional
