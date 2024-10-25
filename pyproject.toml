@@ -34,8 +34,8 @@ Homepage = "https://github.com/mantis-software-company/finch"
 [project.scripts]
 finch = "finch.__main__:main"
 
-[tool.setuptools]
-packages = ["finch"]
+[tool.setuptools.packages]
+find = {}
 
 [tool.setuptools.package-data]
 "finch" = ["img/*.png", "img/*.svg"]
