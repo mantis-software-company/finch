@@ -156,7 +156,7 @@ class MainWindow(QMainWindow):
 
                 download_action = QAction(self)
                 download_action.setText("&Download")
-                download_action.setIcon(QIcon(resource_path('img/save.svg')))
+                download_action.setIcon(QIcon(resource_path('img/download.svg')))
                 download_action.triggered.connect(self.download_file)
                 download_action.setDisabled(True)
 
