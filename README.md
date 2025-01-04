@@ -39,7 +39,7 @@ Finch S3 Client is an open source project, and we welcome contributions from the
 ## License
 Finch S3 Client is released under the [MIT License](https://github.com/mantis-software-company/finch/blob/main/LICENSE).
 
-Icons used in GUI was copied from GNOME [Adwaita](https://gitlab.gnome.org/GNOME/adwaita-icon-theme) icon theme. 
+Icons used in GUI is taken from [Feather Icons](https://feathericons.com/).
 
 ## Credits
 S3 Client was created by [Furkan Kalkan](https://github.com/geekdinazor).

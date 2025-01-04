@@ -3,9 +3,9 @@ import os
 from typing import List
 
 import keyring
-from PyQt5.QtCore import QAbstractTableModel, Qt, pyqtSignal, QItemSelectionModel
+from PyQt5.QtCore import QAbstractTableModel, Qt, pyqtSignal
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, \
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, \
     QTableView, QToolBar, QAction, QBoxLayout, QAbstractItemView, QHeaderView, QItemDelegate, QApplication, QStyle, \
     QStyledItemDelegate
 from slugify import slugify
@@ -196,7 +196,7 @@ class ManageCredentialsWindow(QWidget):
         self.credential_toolbar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         add_row_action = QAction(self)
         add_row_action.setText("&Create Credential")
-        add_row_action.setIcon(QIcon(resource_path('img/plus.svg')))
+        add_row_action.setIcon(QIcon(resource_path('img/new-credential.svg')))
         add_row_action.triggered.connect(self.add_row)
 
         self.delete_row_action = QAction(self)
@@ -204,13 +204,7 @@ class ManageCredentialsWindow(QWidget):
         self.delete_row_action.setIcon(QIcon(resource_path('img/trash.svg')))
         self.delete_row_action.triggered.connect(self.delete_row)
 
-        # save_action = QAction(self)
-        # save_action.setText("&Save Credentials")
-        # save_action.setIcon(QtGui.QIcon.fromTheme("media-floppy-symbolic"))
-        # save_action.triggered.connect(self.save_credentials)
-
         self.credential_toolbar.addAction(add_row_action)
-        # self.credential_toolbar.addAction(save_action)
 
         self.table_data = QTableView()
         self.table_data.setModel(CredentialsModel(self.temp_credentials_data))

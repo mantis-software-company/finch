@@ -92,3 +92,10 @@ class StringUtils:
                 break
             file_size /= 1024.0
         return f'{StringUtils.remove_trailing_zeros(f"{file_size:.{decimal_places}f}"): >8} {unit}'
+
+    def format_list_with_conjunction(items: list, conjunction='and') -> str:
+        """Format list items with proper punctuation and conjunction.
+        Example: ['a', 'b', 'c'] -> 'a, b and c'"""
+        if len(items) > 1:
+            return f"{', '.join(items[:-1])} {conjunction} {items[-1]}"
+        return items[0] if items else ''
