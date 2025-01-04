@@ -16,6 +16,7 @@ from slugify import slugify
 
 from finch.about import AboutWindow
 from finch.common import ObjectType, s3_session, apply_theme, center_window, CONFIG_PATH, StringUtils, resource_path
+from finch.cors import CORSWindow
 from finch.credentials import CredentialsManager, ManageCredentialsWindow
 from finch.download import DownloadProgressDialog
 from finch.error import show_error_dialog
@@ -296,6 +297,15 @@ class MainWindow(QMainWindow):
                 create_folder_action.setIcon(QIcon(resource_path('img/new-folder.svg')))
                 create_folder_action.triggered.connect(self.create_folder)
                 menu.addAction(create_folder_action)
+
+                tools_menu = menu.addMenu("Tools")
+                tools_menu.setIcon(QIcon(resource_path('img/tools.svg')))
+
+                cors_action = QAction(self)
+                cors_action.setText("&CORS Configurations")
+                cors_action.setIcon(QIcon(resource_path('img/globe.svg')))
+                cors_action.triggered.connect(self.show_cors_window)
+                tools_menu.addAction(cors_action)
             elif indexes[1].data() == ObjectType.FOLDER:
                 delete_folder_action = QAction("Delete Folder")
                 delete_folder_action.setIcon(QIcon(resource_path('img/trash.svg')))
@@ -491,6 +501,15 @@ class MainWindow(QMainWindow):
             if idx in [5]:
                 action.setDisabled(True)
         self.layout.addWidget(self.search_widget)
+
+    def show_cors_window(self) -> None:
+        """ Open CORS configuration window """
+        indexes = self.tree_widget.selectedIndexes()
+        if indexes[1].data() == ObjectType.BUCKET:
+            bucket_name = self.get_bucket_name_from_selected_item()
+            # get bucket name and pass it to CORSWindow
+            self.cors_window = CORSWindow(bucket_name=bucket_name)
+            self.cors_window.show()
 
     def open_about_window(self) -> None:
         """ Open about window """
