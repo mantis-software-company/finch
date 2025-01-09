@@ -2,7 +2,7 @@ import json
 
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
-    QWidget, QHBoxLayout, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem, QStyle
+    QWidget, QHBoxLayout, QLineEdit, QPushButton, QTreeWidgetItem, QStyle
 )
 
 from finch.common import s3_session, ObjectType, StringUtils, resource_path

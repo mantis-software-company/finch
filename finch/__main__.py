@@ -210,7 +210,7 @@ class MainWindow(QMainWindow):
                 self.add_buckets_to_tree()
 
             except Exception as e:
-                show_error_dialog(str(e))
+                show_error_dialog(e, show_traceback=True)
 
     def get_bucket_name_from_selected_item(self):
         """ Get bucket name data from bucket or file/folder item in treeview """
@@ -250,7 +250,7 @@ class MainWindow(QMainWindow):
                 bucket_item.setChildIndicatorPolicy(QTreeWidgetItem.ShowIndicator)
         except Exception as e:
             self.removeToolBar(self.file_toolbar)
-            show_error_dialog(str(e))
+            show_error_dialog(e, show_traceback=True)
 
     def add_files_to_tree(self, item):
         """ Runs `S3FileListFetchThread` """
@@ -350,7 +350,7 @@ class MainWindow(QMainWindow):
             try:
                 s3_session.resource.create_bucket(Bucket=bucket_name)
             except Exception as e:
-                show_error_dialog(str(e))
+                show_error_dialog(e, show_traceback=True)
             self.refresh_ui()
 
     def create_folder(self) -> None:
@@ -368,7 +368,7 @@ class MainWindow(QMainWindow):
                 s3_session.resource.meta.client.put_object(Bucket=bucket_name, Body=b'',
                                                            Key=folder_path)
             except Exception as e:
-                show_error_dialog(str(e))
+                show_error_dialog(e, show_traceback=True)
 
             self.refresh_ui()
 
@@ -387,7 +387,7 @@ class MainWindow(QMainWindow):
                 try:
                     s3_session.resource.Bucket(bucket_name).delete()
                 except Exception as e:
-                    show_error_dialog(str(e))
+                    show_error_dialog(e, show_traceback=True)
         else:
             dlg = QMessageBox(self)
             dlg.setIcon(QMessageBox.Warning)
@@ -405,7 +405,7 @@ class MainWindow(QMainWindow):
                         s3_session.resource.Bucket(bucket_name).objects.all().delete()
                     s3_session.resource.Bucket(bucket_name).delete()
                 except Exception as e:
-                    show_error_dialog(str(e))
+                    show_error_dialog(e, show_traceback=True)
             self.refresh_ui()
 
     def delete_folder(self) -> None:

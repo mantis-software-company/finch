@@ -311,7 +311,7 @@ class CORSWindow(QWidget):
             QMessageBox.information(self, "Success", "CORS configuration applied successfully")
             
         except Exception as e:
-            show_error_dialog(str(e))
+            show_error_dialog(e, show_traceback=True)
 
     def _enable_form(self, enabled=True):
         """Enable/disable all form fields"""
