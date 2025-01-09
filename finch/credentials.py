@@ -103,7 +103,7 @@ class TempCredentialsData:
             try:
                 keyring.delete_password(f'{slugify(credential["Credential Name"])}@finch', credential["Access Key"])
             except keyring.errors.PasswordDeleteError as e:
-                show_error_dialog('Keyring deletion error')
+                show_error_dialog('Keyring deletion error', show_traceback=True)
 
 
 class CredentialsModel(QAbstractTableModel):
@@ -272,5 +272,5 @@ class ManageCredentialsWindow(QWidget):
             show_error_dialog(f"Validation error: {e}")
             event.ignore()
         except Exception as e:
-            show_error_dialog(f"Unknown error: {e}")
+            show_error_dialog(f"Unknown error: {e}", show_traceback=True)
             event.ignore()

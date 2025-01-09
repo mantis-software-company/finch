@@ -25,7 +25,7 @@ class S3Downloader(QObject):
                 s3_session.resource.meta.client.download_fileobj(self.bucket_name, self.key, f,
                                                                  Callback=self.update_progress)
         except Exception as e:
-            show_error_dialog(str(e))
+            show_error_dialog(e, show_traceback=True)
 
     def update_progress(self, bytes_downloaded):
         self.downloaded_size += bytes_downloaded
