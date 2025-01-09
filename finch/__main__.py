@@ -15,7 +15,8 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidget, QTreeWidgetI
 from slugify import slugify
 
 from finch.about import AboutWindow
-from finch.common import ObjectType, s3_session, apply_theme, center_window, CONFIG_PATH, StringUtils, resource_path
+from finch.common import ObjectType, s3_session, apply_theme, center_window, CONFIG_PATH, StringUtils, resource_path, \
+    TimeIntervalInputDialog
 from finch.cors import CORSWindow
 from finch.credentials import CredentialsManager, ManageCredentialsWindow
 from finch.download import DownloadProgressDialog
@@ -328,6 +329,16 @@ class MainWindow(QMainWindow):
                 delete_file_action.triggered.connect(self.delete_file)
                 menu.addAction(delete_file_action)
 
+                tools_menu = menu.addMenu("Tools")
+                tools_menu.setIcon(QIcon(resource_path('img/tools.svg')))
+
+                presigned_url_action = QAction(self)
+                presigned_url_action.setText("Get Presigned Download URL")
+                presigned_url_action.setIcon(QIcon(resource_path('img/globe.svg')))
+                presigned_url_action.triggered.connect(self.get_presigned_download_url)
+                tools_menu.addAction(presigned_url_action)
+                menu.addMenu(tools_menu)
+
             menu.exec_(self.tree_widget.viewport().mapToGlobal(position))
 
     # ############### Actions ############################
@@ -510,6 +521,23 @@ class MainWindow(QMainWindow):
             # get bucket name and pass it to CORSWindow
             self.cors_window = CORSWindow(bucket_name=bucket_name)
             self.cors_window.show()
+
+    def get_presigned_download_url(self):
+        """ Opens a dialog to get presigned URL for a file """
+        indexes = self.tree_widget.selectedIndexes()
+        if indexes[1].data() == ObjectType.FILE:
+            bucket_name = self.get_bucket_name_from_selected_item()
+            file_key = self.get_object_key_from_selected_item()
+            expires_dialog = TimeIntervalInputDialog(window_title="Expire Time ?",
+                                                     default_unit=TimeIntervalInputDialog.TimeUnit.HOURS,
+                                                     default_value=1,
+                                                     max_seconds=604800)
+            if expires_dialog.exec():
+                print(expires_dialog.value)
+                url = s3_session.resource.meta.client.generate_presigned_url('get_object',
+                                                                         Params={'Bucket': bucket_name, 'Key': file_key},
+                                                                         ExpiresIn=expires_dialog.value_as_seconds)
+                QMessageBox.information(self, f"Presigned URL for {file_key}", url)
 
     def open_about_window(self) -> None:
         """ Open about window """

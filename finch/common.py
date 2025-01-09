@@ -9,7 +9,10 @@ from typing import Union
 import boto3
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPalette, QColor
-from PyQt5.QtWidgets import QDesktopWidget
+from PyQt5.QtWidgets import QDesktopWidget, QDialog, QVBoxLayout, QDialogButtonBox, QHBoxLayout, QComboBox, QWidget, \
+    QDoubleSpinBox
+
+from finch.error import show_error_dialog
 
 s3_session = boto3.session.Session()
 
@@ -58,6 +61,7 @@ def resource_path(relative_path):
         base_path = pathlib.Path(__file__).parent.resolve()
     return os.path.join(base_path, relative_path)
 
+
 class ObjectType(str, Enum):
     """ Enum for S3 object types """
     BUCKET = "Bucket"
@@ -99,3 +103,98 @@ class StringUtils:
         if len(items) > 1:
             return f"{', '.join(items[:-1])} {conjunction} {items[-1]}"
         return items[0] if items else ''
+
+
+class TimeIntervalInputDialog(QDialog):
+    """Dialog for entering time interval"""
+
+    class TimeUnit(Enum):
+        SECONDS = 1
+        MINUTES = 60
+        HOURS = 60 * 60
+        DAYS = 24 * 60 * 60
+
+    def __init__(self, parent=None, window_title: str = "Please Enter Time Interval", max_seconds: int = None,
+                 default_unit: "TimeIntervalInputDialog.TimeUnit" = TimeUnit.SECONDS, default_value: int = None,
+                 allow_zero: bool = False):
+
+        """
+        Initialize the TimeIntervalInputDialog.
+
+        Args:
+            parent (QWidget, optional): The parent widget. Defaults to None.
+            window_title (str, optional): The title of the dialog window. Defaults to "Please Enter Time Interval".
+            max_seconds (int, optional): The maximum allowed time interval in seconds. Defaults to TimeUnit.SECONDS.
+            default_unit (TimeIntervalInputDialog.TimeUnit, optional): The default time unit. Defaults to None.
+            default_value (int, optional): The default value for the time input. Defaults to None.
+            allow_zero (bool, optional): Whether to allow zero as a valid time interval. Defaults to False.
+        """
+
+        super().__init__(parent)
+        self.value = None
+        self.unit = None
+        self.value_as_seconds = None
+        self.max_seconds = max_seconds
+        self.allow_zero = allow_zero
+        self.setWindowTitle(window_title)
+        layout = QVBoxLayout()
+        time_widget = QWidget()
+        time_wiget_layout = QHBoxLayout()
+        self.time_value_input = QDoubleSpinBox()
+        self.time_value_input.setMaximum(2147483647)
+        self.time_value_input.setDecimals(3)  # Limit to three decimal places for seconds
+        if default_value is not None:
+            self.time_value_input.setValue(default_value)
+
+        self.time_unit_combobox = QComboBox()
+        self.time_unit_combobox.addItems(list(map(lambda unit: unit.lower(), self.TimeUnit._member_names_)))
+
+        self.time_unit_combobox.setCurrentText(default_unit.name.lower())
+        self.unit = default_unit
+
+        self.time_unit_combobox.currentIndexChanged.connect(self.update_value)
+        time_wiget_layout.addWidget(self.time_value_input)
+        time_wiget_layout.addWidget(self.time_unit_combobox)
+        time_widget.setLayout(time_wiget_layout)
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.on_accept)
+        layout.addWidget(time_widget)
+        layout.addWidget(buttons)
+        self.setLayout(layout)
+
+    def on_accept(self):
+        """
+        Handle the acceptance of the dialog.
+
+        This method is called when the user clicks the OK button. It validates the entered time interval,
+        shows error messages if necessary, and sets the final values if the input is valid.
+        """
+        value = self.time_value_input.value()
+        value_as_seconds = value * self.unit.value
+        if not self.allow_zero and value_as_seconds == 0:
+            show_error_dialog("Time interval cannot be zero second")
+        else:
+            if value_as_seconds > self.max_seconds:
+                show_error_dialog(f"Maximum allowed time interval is {self.max_seconds} seconds")
+            else:
+                self.value = value
+                self.value_as_seconds = value_as_seconds
+                self.accept()
+
+    def update_value(self, index: int):
+        """
+        Update the time value when the time unit is changed.
+
+        This method recalculates the time value based on the newly selected time unit.
+
+        Args:
+            index (int): The index of the newly selected time unit in the combo box.
+        """
+        current_value = self.time_value_input.value()
+        current_unit = self.unit
+        new_unit = self.TimeUnit[self.time_unit_combobox.currentText().upper()]
+
+        new_value = (current_value * current_unit.value) / new_unit.value
+        self.time_unit_combobox.setCurrentIndex(index)
+        self.time_value_input.setValue(new_value)
+        self.unit = new_unit
