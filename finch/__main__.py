@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidget, QTreeWidgetI
 from slugify import slugify
 
 from finch.about import AboutWindow
+from finch.acl import ACLWindow
 from finch.common import ObjectType, s3_session, apply_theme, center_window, CONFIG_PATH, StringUtils, resource_path, \
     TimeIntervalInputDialog
 from finch.cors import CORSWindow
@@ -303,10 +304,17 @@ class MainWindow(QMainWindow):
                 tools_menu.setIcon(QIcon(resource_path('img/tools.svg')))
 
                 cors_action = QAction(self)
-                cors_action.setText("&CORS Configurations")
+                cors_action.setText("CORS Configurations")
                 cors_action.setIcon(QIcon(resource_path('img/globe.svg')))
                 cors_action.triggered.connect(self.show_cors_window)
                 tools_menu.addAction(cors_action)
+
+                acl_action = QAction(self)
+                acl_action.setText("ACL Configuration")
+                acl_action.setIcon(QIcon(resource_path('img/tools.svg')))
+                acl_action.triggered.connect(self.show_acl_window)
+                tools_menu.addAction(acl_action)
+
             elif indexes[1].data() == ObjectType.FOLDER:
                 delete_folder_action = QAction("Delete Folder")
                 delete_folder_action.setIcon(QIcon(resource_path('img/trash.svg')))
@@ -538,6 +546,16 @@ class MainWindow(QMainWindow):
                                                                          Params={'Bucket': bucket_name, 'Key': file_key},
                                                                          ExpiresIn=expires_dialog.value_as_seconds)
                 QMessageBox.information(self, f"Presigned URL for {file_key}", url)
+
+    def show_acl_window(self):
+        """ Open Access Control List configuration window """
+        indexes = self.tree_widget.selectedIndexes()
+        if indexes[1].data() == ObjectType.BUCKET:
+            bucket_name = self.get_bucket_name_from_selected_item()
+            # get bucket name and pass it to ACLWindow
+            # acl = s3_session.resource.meta.client.get_bucket_acl(Bucket=bucket_name)
+            self.acl_window = ACLWindow(bucket_name=bucket_name)
+            self.acl_window.show()
 
     def open_about_window(self) -> None:
         """ Open about window """
