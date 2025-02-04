@@ -1,0 +1,66 @@
+app-id: com.furkankalkan.FinchS3
+runtime: org.freedesktop.Platform
+runtime-version: '23.08'
+sdk: org.freedesktop.Sdk
+command: finch
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=x11
+  - --socket=wayland
+  - --filesystem=home
+  # For keyring access
+  - --talk-name=org.freedesktop.secrets
+  - --filesystem=xdg-config/finch:create
+
+build-options:
+  build-args:
+    - --share=network
+
+modules:
+  - name: python3-pip
+    buildsystem: simple
+    build-commands:
+      - python3 -m ensurepip
+      - pip3 install --upgrade pip
+    cleanup:
+      - /lib/python*/site-packages/pip
+      - /lib/python*/site-packages/setuptools
+
+  - name: python3-boto3-slim
+    buildsystem: simple
+    build-commands:
+      # Install boto3 and dependencies
+      - pip3 install --prefix=/app boto3==1.35.5
+      # Find botocore version and trim it
+      - |
+        BOTOCORE_PATH=$(python3 -c "import botocore; print(botocore.__path__[0])")
+        cd $BOTOCORE_PATH/data
+        for dir in *; do
+          if [[ ! "$dir" =~ ^s3.* ]]; then
+            rm -rf "$dir"
+          fi
+        done
+
+  - name: python3-requirements
+    buildsystem: simple
+    build-commands:
+      - pip3 install --prefix=/app --no-cache-dir PyQt5==5.15.11 keyring==25.3.0 python-slugify==8.0.4
+
+  - name: finch
+    buildsystem: simple
+    build-commands:
+      # Copy project files to a known location
+      - cp -r /run/build/finch/project /app/
+      # Install the package
+      - pip3 install --prefix=/app --no-deps /app/project
+      # Install application files
+      - install -Dm644 /app/project/icon.png /app/share/icons/hicolor/256x256/apps/com.furkankalkan.FinchS3.png
+      - install -Dm644 /app/project/flatpak/files/com.furkankalkan.FinchS3.desktop /app/share/applications/com.furkankalkan.FinchS3.desktop
+      - install -Dm644 /app/project/flatpak/files/com.furkankalkan.FinchS3.metainfo.xml /app/share/metainfo/com.furkankalkan.FinchS3.metainfo.xml
+      # Cleanup
+      - rm -rf /app/project
+    sources:
+      - type: dir
+        path: ..
+        dest: project 

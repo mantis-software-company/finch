@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Finch S3 Client
+Comment=Open source and cross-platform GUI client for Amazon S3
+Exec=finch
+Icon=com.furkankalkan.FinchS3
+Terminal=false
+Type=Application
+Categories=Network;FileTransfer;
+Keywords=s3;aws;storage;cloud; 
