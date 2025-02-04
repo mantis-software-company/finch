@@ -211,10 +211,35 @@ jobs:
           name: linux-artifact
           path: dist/linux/finch-${{ env.VERSION }}-linux-all.deb
 
+  build-flatpak:
+    runs-on: ubuntu-latest
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:freedesktop-23.08
+      options: --privileged
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
+      - name: Set up Flatpak environment
+        run: |
+          flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          flatpak install -y org.freedesktop.Platform//23.08 org.freedesktop.Sdk//23.08
+
+      - name: Build Flatpak bundle
+        run: |
+          flatpak-builder --repo=repo --force-clean build-dir flatpak/com.furkankalkan.FinchS3.yml
+          flatpak build-bundle repo finch-${{ env.VERSION }}-linux-x86_64.flatpak com.furkankalkan.FinchS3
+
+      - name: Upload Flatpak Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flatpak-artifact
+          path: finch-${{ env.VERSION }}-linux-x86_64.flatpak
 
   release:
-    needs: [build-macos-arm, build-macos-intel, build-windows, build-linux]
+    needs: [build-macos-arm, build-macos-intel, build-windows, build-linux, build-flatpak]
     runs-on: ubuntu-latest
     steps:
       - name: Download MacOS Apple Silicon Artifact
@@ -237,6 +262,11 @@ jobs:
         with:
           name: linux-artifact
 
+      - name: Download Flatpak Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: flatpak-artifact
+
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
@@ -249,3 +279,4 @@ jobs:
             finch-${{ env.VERSION }}-macos-x86_64.dmg
             finch-${{ env.VERSION }}-windows-x86_64.msi
             finch-${{ env.VERSION }}-linux-all.deb
+            finch-${{ env.VERSION }}-linux-x86_64.flatpak

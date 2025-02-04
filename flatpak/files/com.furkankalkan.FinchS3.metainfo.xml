@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.furkankalkan.FinchS3</id>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Finch S3 Client</name>
+  <summary>GUI client for Amazon S3 and compatible storage platforms</summary>
+  <description>
+    <p>
+      Open source and cross-platform GUI client for Amazon S3 and compatible storage platforms.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Support for multiple credential through access &amp; secret keys</li>
+      <li>Use cross-platform secure secret key storage</li>
+      <li>Browse and manage your S3 buckets and objects in file tree</li>
+      <li>Delete folders and buckets recursively</li>
+      <li>Upload and download files</li>
+      <li>Searching buckets &amp; objects</li>
+    </ul>
+  </description>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/mantis-software-company/finch/main/img.png</image>
+    </screenshot>
+  </screenshots>
+  <url type="homepage">https://github.com/mantis-software-company/finch</url>
+  <developer_name>Furkan Kalkan</developer_name>
+  <releases>
+    <release version="1.0.0a1" date="2024-01-01"/>
+  </releases>
+  <content_rating type="oars-1.1"/>
+</component> 
