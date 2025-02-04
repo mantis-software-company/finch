@@ -27,7 +27,7 @@ class AboutWindow(QWidget):
         subtitle_font = QFont('sans', 12)
         subtitle_font.setItalic(True)
         subtitle_label.setFont(subtitle_font)
-        version_label = QLabel('v1.0 ALPHA')
+        version_label = QLabel('v1.0 BETA')
         version_label.setFont(subtitle_font)
         contributors_label = QLabel("<strong>Contributors:</strong>")
         contributors_label.setContentsMargins(0, 10, 0, 0)
