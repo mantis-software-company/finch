@@ -35,12 +35,7 @@ modules:
       # Find botocore version and trim it
       - |
         BOTOCORE_PATH=$(python3 -c "import botocore; print(botocore.__path__[0])")
-        cd $BOTOCORE_PATH/data
-        for dir in *; do
-          if [[ ! "$dir" =~ ^s3.* ]]; then
-            rm -rf "$dir"
-          fi
-        done
+        find $BOTOCORE_PATH/data -maxdepth 1 -type d ! -name s3\* ! -path $BOTOCORE_PATH/data -exec rm -rf {} \;
 
   - name: python3-requirements
     buildsystem: simple
