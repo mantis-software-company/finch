@@ -104,26 +104,37 @@ class SearchWidget(QWidget):
         tree = {}
         for path, size, date in objects:
             current = tree
-            *folders, filename = path.split('/')
-            for folder in folders:
-                current = current.setdefault(folder, {})
-            current[filename] = {"_info": (size, date)}
+            parts = path.split('/')
+            
+            # Handle the case where path ends with '/' (folder)
+            if path.endswith('/'):
+                folders = parts[:-1]  # Last element is empty for folders ending in '/'
+                for folder in folders:
+                    current = current.setdefault(folder, {})
+            else:
+                *folders, filename = parts
+                # Add all intermediate folders
+                for folder in folders:
+                    current = current.setdefault(folder, {})
+                # Add file with its metadata
+                current[filename] = {"_info": (size, date)}
         return tree
 
     def _add_items_to_tree(self, parent_item, tree_dict):
         """Recursively add items to the tree widget."""
-        for key, value in tree_dict.items():
-            if key == "_info":
-                continue
-
-            item = self._create_tree_item(name=key, object_type=ObjectType.FOLDER)
-            parent_item.addChild(item)
-
-            if "_info" in value:
+        # First add all folders
+        for key, value in sorted(tree_dict.items()):
+            if key != "_info" and not "_info" in value:
+                item = self._create_tree_item(name=key, object_type=ObjectType.FOLDER)
+                parent_item.addChild(item)
+                self._add_items_to_tree(item, value)
+        
+        # Then add all files
+        for key, value in sorted(tree_dict.items()):
+            if key != "_info" and "_info" in value:
                 size, date = value["_info"]
                 item = self._create_tree_item(name=key, object_type=ObjectType.FILE, size=size, date=date)
-
-            self._add_items_to_tree(item, value)
+                parent_item.addChild(item)
 
     def _expand_and_select(self, item, search_term):
         """Recursively expand and select matching items."""
