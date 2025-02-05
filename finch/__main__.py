@@ -20,7 +20,7 @@ from finch.common import ObjectType, s3_session, apply_theme, center_window, CON
     TimeIntervalInputDialog
 from finch.cors import CORSWindow
 from finch.credentials import CredentialsManager, ManageCredentialsWindow
-from finch.download import DownloadProgressDialog
+from finch.download import MultiDownloadProgressDialog
 from finch.error import show_error_dialog
 from finch.filelist import S3FileListFetchThread
 from finch.upload import UploadDialog
@@ -99,28 +99,40 @@ class MainWindow(QMainWindow):
         self.refresh_ui()
 
     def handle_selection(self, selected, deselected):
-        if selected.indexes():
-            selected_indexes = selected.indexes()
-            object_type = selected_indexes[1].data()
+        selected_items = self.tree_widget.selectedItems()
+        if not selected_items:
+            # No selection - disable relevant actions
             for idx, action in enumerate(self.file_toolbar.actions()):
-                if object_type == ObjectType.FILE:
-                    if idx in [2, 3, 4]:
-                        action.setDisabled(False)
-                    else:
-                        action.setDisabled(True)
+                if idx in [0, 2, 3]:
+                    action.setDisabled(True)
                 else:
-                    if idx in [0, 1, 2, 4]:
-                        action.setDisabled(False)
-                    else:
-                        action.setDisabled(True)
-        if deselected.indexes():
-            selected_indexes = self.tree_widget.selectedIndexes()
-            if not selected_indexes:
-                for idx, action in enumerate(self.file_toolbar.actions()):
-                    if idx in [0, 2, 3]:
-                        action.setDisabled(True)
-                    else:
-                        action.setDisabled(False)
+                    action.setDisabled(False)
+            return
+
+        # Check if all selected items are files
+        all_files = all(item.text(1) == ObjectType.FILE for item in selected_items)
+        single_selection = len(selected_items) == 1
+        first_type = selected_items[0].text(1)
+
+        for idx, action in enumerate(self.file_toolbar.actions()):
+            if all_files:
+                # Enable download and delete for files
+                if idx in [2, 3, 4]:
+                    action.setDisabled(False)
+                else:
+                    action.setDisabled(True)
+            elif single_selection and first_type in [ObjectType.BUCKET, ObjectType.FOLDER]:
+                # Enable create and delete for buckets/folders
+                if idx in [0, 1, 2, 4]:
+                    action.setDisabled(False)
+                else:
+                    action.setDisabled(True)
+            else:
+                # Mixed selection or multiple buckets/folders
+                if idx in [0, 2, 3]:
+                    action.setDisabled(True)
+                else:
+                    action.setDisabled(False)
 
     def show_s3_files(self, cred_index):
         if self.credential_selector.itemData(cred_index) != 0:
@@ -160,7 +172,7 @@ class MainWindow(QMainWindow):
                 download_action = QAction(self)
                 download_action.setText("&Download")
                 download_action.setIcon(QIcon(resource_path('img/download.svg')))
-                download_action.triggered.connect(self.download_file)
+                download_action.triggered.connect(self.download_files)
                 download_action.setDisabled(True)
 
                 refresh_action = QAction(self)
@@ -197,6 +209,7 @@ class MainWindow(QMainWindow):
                 self.tree_widget.customContextMenuRequested.connect(self.open_context_menu)
                 self.tree_widget.setSortingEnabled(True)
                 self.tree_widget.sortByColumn(0, Qt.AscendingOrder)
+                self.tree_widget.setSelectionMode(QTreeWidget.ExtendedSelection)
                 header = self.tree_widget.header()
                 header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
                 header.setStretchLastSection(False)
@@ -327,9 +340,9 @@ class MainWindow(QMainWindow):
                 menu.addAction(create_folder_action)
 
             elif indexes[1].data() == ObjectType.FILE:
-                download_file_action = QAction("Download File")
+                download_file_action = QAction("Download File(s)")
                 download_file_action.setIcon(QIcon(resource_path('img/save.svg')))
-                download_file_action.triggered.connect(self.download_file)
+                download_file_action.triggered.connect(self.download_files)
                 menu.addAction(download_file_action)
 
                 delete_file_action = QAction("Delete File")
@@ -485,15 +498,30 @@ class MainWindow(QMainWindow):
                 self.upload_dialog.cleanup()
             self.refresh_ui()
 
-    def download_file(self) -> None:
-        """ Downloads file to selected local folder path """
-        bucket_name = self.get_bucket_name_from_selected_item()
-        file_key = self.get_object_key_from_selected_item()
+
+    def download_files(self) -> None:
+        """Downloads multiple files to selected local folder path"""
+        selected_items = self.tree_widget.selectedItems()
+        if not selected_items:
+            return
+        
+        # Get all selected file keys with their bucket names
+        file_list = []
+        for item in selected_items:
+            if item.text(1) == ObjectType.FILE:
+                bucket_name = item.data(4, Qt.UserRole)
+                file_key = item.data(5, Qt.UserRole)
+                file_list.append((bucket_name, file_key))
+        
+        if not file_list:
+            return
+        
+        # Get destination folder
         file_dialog = QFileDialog()
         file_dialog.setWindowTitle("Select folder to download")
         local_path = file_dialog.getExistingDirectory()
         if local_path:
-            self.download_dialog = DownloadProgressDialog(bucket_name, file_key, local_path)
+            self.download_dialog = MultiDownloadProgressDialog(file_list, local_path)
             self.download_dialog.exec_()
 
     def show_manage_credential_window(self) -> None:
