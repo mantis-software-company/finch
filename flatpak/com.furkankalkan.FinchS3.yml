@@ -31,7 +31,7 @@ modules:
     buildsystem: simple
     build-commands:
       # Install boto3 and dependencies
-      - pip3 install --prefix=/app boto3==1.35.5
+      - pip3 install --prefix=/app boto3==1.28.50 botocore==1.31.50
       # Find botocore version and trim it
       - |
         BOTOCORE_PATH=$(python3 -c "import botocore; print(botocore.__path__[0])")
